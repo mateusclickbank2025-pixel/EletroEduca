@@ -1,0 +1,26 @@
+ELETROEDUCA — ATUALIZAÇÃO INICIAL DE PROJETOS SALVOS
+
+Esta atualização adiciona uma área “Meus projetos salvos” e uma rota no servidor para listar os projetos armazenados no PostgreSQL.
+
+IMPORTANTE:
+- Faça backup do repositório atual antes de substituir arquivos.
+- Esta atualização NÃO transforma o projeto em um produto final completo.
+- O laboratório ainda tem conexões visuais demonstrativas, não cálculo elétrico real.
+- Ainda não há login/autenticação. Portanto, não use dados privados ou ofereça acesso público a projetos pessoais até implementar autenticação e isolamento por usuário.
+- Checkout, cobrança real, assinaturas, painel do proprietário protegido, cursos completos e validação elétrica ainda não estão implementados.
+
+ARQUIVOS ALTERADOS:
+- src/App.jsx: menu e página “Meus projetos salvos”, botão para carregar a configuração salva.
+- src/styles.css: estilos da página vazia de projetos salvos.
+- server/index.js: endpoint GET /api/projects/saved que lista os últimos 100 projetos do PostgreSQL.
+
+COMO APLICAR PELO GITHUB:
+1. Extraia este ZIP no computador.
+2. Abra seu repositório GitHub EletroEduca.
+3. Substitua os arquivos correspondentes mantendo a mesma estrutura de pastas.
+4. Faça commit das alterações.
+5. Aguarde o Render terminar o novo deploy e ficar Live.
+6. Abra o site, entre no Laboratório 3D, clique no ícone de salvar e dê um nome.
+7. Entre em “Meus projetos salvos” para verificar se ele aparece.
+
+Se a gravação falhar, confira no Render se DATABASE_URL está configurada no serviço web e se o PostgreSQL está ativo. O endpoint de salvamento cria a tabela automaticamente.

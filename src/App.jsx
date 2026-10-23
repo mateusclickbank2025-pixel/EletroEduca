@@ -59,12 +59,14 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [plans, setPlans] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [savedProjects, setSavedProjects] = useState([]);
   const [health, setHealth] = useState('Verificando serviços…');
 
   React.useEffect(() => {
     fetch('/api/health').then(r => r.json()).then(d => setHealth(d.database === 'connected' ? 'Banco conectado' : d.database === 'not_configured' ? 'Banco ainda não configurado' : 'Banco com erro')).catch(() => setHealth('API indisponível'));
     fetch('/api/plans').then(r => r.json()).then(setPlans).catch(() => {});
     fetch('/api/projects').then(r => r.json()).then(setProjects).catch(() => {});
+    fetch('/api/projects/saved').then(r => r.ok ? r.json() : []).then(setSavedProjects).catch(() => {});
   }, []);
 
   const saveProject = async () => {
@@ -74,7 +76,8 @@ export default function App() {
       const r = await fetch('/api/projects/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, project: { connected, selected, wireColor, version: 1 } }) });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Falha ao salvar');
-      setNotice(`Projeto salvo na nuvem (ID ${data.id}).`);
+      setNotice(`Projeto salvo no PostgreSQL (ID ${data.id}).`);
+      fetch('/api/projects/saved').then(r => r.ok ? r.json() : []).then(setSavedProjects).catch(() => {});
     } catch (e) {
       localStorage.setItem('eletroeduca-project', JSON.stringify({ name, connected, selected, wireColor }));
       setNotice(`${e.message} Uma cópia local foi guardada neste navegador.`);
@@ -87,6 +90,7 @@ export default function App() {
       <div className="side-caption">ESPAÇO DE APRENDIZAGEM</div>
       <button className={page === 'lab' ? 'nav active' : 'nav'} onClick={() => setPage('lab')}><Cable size={18}/> Laboratório 3D</button>
       <button className={page === 'projects' ? 'nav active' : 'nav'} onClick={() => setPage('projects')}><BookOpen size={18}/> Biblioteca de projetos</button>
+      <button className={page === 'saved' ? 'nav active' : 'nav'} onClick={() => { setPage('saved'); fetch('/api/projects/saved').then(r => r.ok ? r.json() : []).then(setSavedProjects).catch(() => {}); }}><Save size={18}/> Meus projetos salvos</button>
       <button className={page === 'plans' ? 'nav active' : 'nav'} onClick={() => setPage('plans')}><Sparkles size={18}/> Planos</button>
       <div className="sidebar-bottom"><div className="safety"><ShieldCheck size={18}/><div><b>Ambiente virtual seguro</b><small>Simulações educativas. Não conecte a instalações reais.</small></div></div><small className="service-state"><span className="dot"/> {health}</small></div>
     </aside>
@@ -105,6 +109,7 @@ export default function App() {
         </div>
         <div className="bottom-cards"><div className="mini-card"><div className="mini-icon purple"><BookOpen size={19}/></div><div><b>Aprenda por etapas</b><p>Projetos organizados por dificuldade.</p></div><ChevronRight size={17}/></div><div className="mini-card"><div className="mini-icon green"><CheckCircle2 size={19}/></div><div><b>Pratique com segurança</b><p>Experimentos somente virtuais.</p></div><ChevronRight size={17}/></div></div>
       </section>}
+      {page === 'saved' && <section className="content-page"><h2>Meus projetos salvos</h2><p className="muted">Projetos guardados no PostgreSQL deste serviço.</p>{savedProjects.length === 0 ? <div className="empty-saved"><Save size={28}/><h3>Nenhum projeto encontrado</h3><p>Abra o Laboratório 3D e use o botão de salvar para guardar sua montagem.</p><button className="outline-button" onClick={() => setPage('lab')}>Abrir laboratório <ChevronRight size={15}/></button></div> : <div className="project-grid">{savedProjects.map(p => <article className="project-card" key={p.id}><div className="project-art"><Save size={27}/></div><span className="tag">SALVO NA NUVEM</span><h3>{p.name}</h3><p>Salvo em {new Date(p.created_at).toLocaleString('pt-BR')}</p><button className="outline-button" onClick={() => { const data = p.project || {}; setConnected(!!data.connected); setSelected(data.selected || 'battery'); setWireColor(data.wireColor || '#ef4444'); setPage('lab'); setNotice('Projeto carregado.'); }}>Carregar projeto <ChevronRight size={15}/></button></article>)}</div>}</section>}
       {page === 'projects' && <section className="content-page"><p className="muted">Projetos iniciais para explorar. A biblioteca será ampliada conforme implementarmos os módulos didáticos.</p><div className="project-grid">{projects.map(p=><article className="project-card" key={p.id}><div className="project-art"><Zap size={27}/></div><span className="tag">{p.category}</span><h3>{p.title}</h3><p>{p.description}</p><button className="outline-button" onClick={()=>{setPage('lab');setNotice(`Projeto “${p.title}” selecionado como referência. A carga completa do projeto será implementada na próxima etapa.`)}}>Abrir projeto <ChevronRight size={15}/></button></article>)}</div></section>}
       {page === 'plans' && <section className="content-page"><div className="plans-intro"><span className="tag"><Sparkles size={14}/> ACESSO À PLATAFORMA</span><h2>Escolha como aprender</h2><p>Preços iniciais sugeridos no documento de requisitos. O checkout ainda não está ativado.</p></div><div className="plans-grid">{plans.map(p=><article className="plan-card" key={p.id}><h3>Plano {p.name.toLowerCase()}</h3><div className="price">R$ {(p.priceCents/100).toLocaleString('pt-BR',{minimumFractionDigits:2})}<small> / {p.durationMonths===1?'mês':`${p.durationMonths} meses`}</small></div><ul><li>Biblioteca educacional</li><li>Projetos de estudo</li><li>Recursos conforme disponibilidade</li></ul><button className="outline-button" onClick={()=>setNotice('Checkout indisponível: configure um provedor de pagamento real antes de receber cobranças.')}>Conhecer plano <ChevronRight size={15}/></button><small className="plan-warning">Pagamento não habilitado</small></article>)}</div></section>}
       <footer><span>© {new Date().getFullYear()} EletroEduca</span><span>Laboratório virtual educativo • Não substitui projeto técnico profissional</span></footer>

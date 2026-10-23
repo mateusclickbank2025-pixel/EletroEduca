@@ -43,6 +43,18 @@ app.get('/api/projects', (_req, res) => {
   ]);
 });
 
+app.get('/api/projects/saved', async (_req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Banco de dados não configurado.' });
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS saved_projects (id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL, project JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+    const result = await pool.query('SELECT id, name, project, created_at FROM saved_projects ORDER BY created_at DESC LIMIT 100');
+    res.json(result.rows);
+  } catch (e) {
+    console.error('list saved projects failed', e.message);
+    res.status(500).json({ error: 'Não foi possível carregar os projetos salvos.' });
+  }
+});
+
 app.post('/api/projects/save', async (req, res) => {
   const { name, project } = req.body || {};
   if (typeof name !== 'string' || !name.trim() || !project || typeof project !== 'object') {
